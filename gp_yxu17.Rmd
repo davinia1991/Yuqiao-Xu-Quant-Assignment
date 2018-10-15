@@ -1,0 +1,32 @@
+---
+title: "gp_yxu17.lp"
+output: html_document
+---
+```{r}
+library(lpSolveAPI)
+gp_yxu17 <- read.lp("gp_yxu17.lp")
+gp_yxu17
+```
+### solve
+```{r}
+solve(gp_yxu17)
+get.objective(gp_yxu17)
+```
+### Solution
+```{r}
+get.variables(gp_yxu17)
+```
+### Remarks ###
+y1m=0 M=500 y2s=0 y2m=0 y3s=6.481481 x1=3.703704 x2=0 x3=5.370370 y1s=0 and y3m=0 (x1 x2 x3 is equal to product 1,product 2, product 3)
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
