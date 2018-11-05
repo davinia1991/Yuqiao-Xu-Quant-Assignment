@@ -1,0 +1,112 @@
+---
+title: "Metaheuristics Question 1"
+output: html_document
+---
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(GenSA)
+library(ggplot2)
+library(GA)
+```
+```{r}
+library('ggplot2')
+library('quantmod')
+library('GA')
+library('GenSA')
+```
+```{r}
+#Feeding real-time stock data into the system
+tickers <- c("WMT", "AAPL", "GOOGL", "AMZN", "TSLA")
+getSymbols(tickers, from = "2010-12-01", to = "2018-11-5")
+P <- NULL
+for(ticker in tickers) {
+ tmp <- Cl(to.monthly(eval(parse(text = ticker))))
+ P <- cbind(P, tmp)
+}
+colnames(P) <- tickers
+R <- diff(log(P))
+R <- R[-1,]
+mu <- colMeans(R)
+sigma <- cov(R)
+library("PerformanceAnalytics")
+pContribCVaR <- ES(weights = rep(0.2, 5), method = "gaussian", portfolio_method = "component", mu = mu, sigma = sigma)$pct_contrib_ES
+obj <- function(w) {
+ fn.call <<- fn.call + 1
+ if (sum(w) == 0) { w <- w + 1e-2 }
+ w <- w / sum(w)
+ CVaR <- ES(weights = w, method = "gaussian", portfolio_method = "component", mu = mu, sigma = sigma)
+ tmp1 <- CVaR$ES
+ tmp2 <- max(CVaR$pct_contrib_ES - 0.225, 0)
+ out <- tmp1 - 1e+3 * tmp2
+ return(out)
+}
+obj1 <- function(w) {
+ fn.call <<- fn.call + 1
+ if (sum(w) == 0) { w <- w + 1e-2 }
+ w <- w / sum(w)
+ CVaR <- ES(weights = w, method = "gaussian", portfolio_method = "component", mu = mu, sigma = sigma)
+ tmp1 <- CVaR$ES
+ tmp2 <- max(CVaR$pct_contrib_ES - 0.225, 0)
+ out1 <- tmp1 + 1e+3 * tmp2
+ return(out1)
+}
+```
+```{r}
+#Applying GA to assign weights for optimum portfolio using min objective
+# Where x1 = BAC, x2 = F, x3 = GE, x4 = AAPL and x5 = WMT
+# Solution is the weights assigned to each of the stocks for optimum portfolio
+set.seed(1234)
+fn.call <<- 0
+gap <- ga(type = "real-valued",fitness=obj,lower=rep(0,5),upper=rep(1,5), popSize = 50,maxiter = 150, pcrossover = 0.75, pmutation = 0.1)
+nsol <- gap@solution
+nsol <- nsol / sum(nsol)
+fn.call.gap <- fn.call
+nsol
+summary(gap)
+plot(gap)
+```
+```{r}
+#Applying GenSA to assign weights to the stocks for optimum portfolio using max objective
+set.seed(1234)
+fn.call <<- 0
+out.GenSA <- GenSA(fn = obj1, lower = rep(0, 5), upper = rep(1, 5), control = list(smooth = FALSE, max.call = 3000))
+fn.call.GenSA <- fn.call
+out.GenSA$value
+out.GenSA$counts
+cat("GenSA call functions", fn.call.GenSA, "times.\n")
+wstar.GenSA <- out.GenSA$par
+wstar.GenSA <- wstar.GenSA / sum(wstar.GenSA)
+rbind(tickers, round(100 * wstar.GenSA, 2))
+100 * (sum(wstar.GenSA * mu) - mean(mu))
+wstar.GenSA
+```
+```{r}
+ #comparing the weights as per both the algorithms
+b <- matrix(c(nsol, wstar.GenSA), nrow = 5, ncol = 2)
+rownames(b) = c("WMT", "AAPL", "GOOGL", "AMZN", "TSLA")
+colnames(b) = c("GAPortfolio", "GenSAPortfolio")
+b
+TickerSymbol <- (c("WMT","AAPL","GOOGL","AMZN","TSLA","______","TOTAL"))
+Company <- (c("Walmart","Apple","Google","Amazon","Tesla","",""))
+GA_percent  <- (c(22,22,22,20,14,"_____ ",100))
+GenSA_percent <- (c(33,20,21,17,10,"_____ ",100))
+TData <- data.frame(TickerSymbol, Company, GA_percent, GenSA_percent) 
+TData
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
