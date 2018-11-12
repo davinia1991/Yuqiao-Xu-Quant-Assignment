@@ -1,0 +1,98 @@
+---
+title: 'Metaheuristics Q2'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+
+```{r}
+x <- c(41, 43, 47, 49, 40, 54, 56, 51, 56, 61, 65, 67)
+y <- c(2.28, 2.08, 2.42, 2.17, 2.48, 2.3, 2.82, 3.7, 3.11, 3.13, 3.64, 3.56)
+z = data.frame(x,y)
+```
+
+```{r}
+ssyy <- sum((y - mean(y)) ^ 2)
+ssxy <- sum((x - mean(x)) * (y - mean(y)))
+ssx <- sum((x - mean(x)) ^ 2)
+b1 <- ssxy/ssx
+b0 <- mean(y) - b1 * mean(x)
+
+print(b1)
+print(b0)
+```
+
+```{r}
+linear_model <- lm(y ~ x)
+
+summary(linear_model)
+```
+```{r}
+obj <- function (r) {
+    fn <- function (b0, b1) {
+        return (sum(y - (b0 + b1 * x)) ^ 2)
+    }
+    return (fn(r[1], r[2]))
+}
+
+ubound <- c(1, 0.1)
+lbound <- c(0, 0)
+```
+```{r}
+library(GenSA)
+```
+
+
+```{r}
+library(GA)
+ga_search <- ga( type = "real-valued", fitness = function (x) -obj(x), lower = lbound, upper = ubound,popSize = 50)
+summary(ga_search)
+plot(ga_search)
+```
+
+
+```{r}
+library(GenSA)
+par <- c(1,0)
+sa <- GenSA(
+  par = par,
+  lower =lbound,
+  upper = ubound,
+  fn = obj
+)
+sa[c("value","par","counts")]
+```
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+
+
+
+```{r}
+pp <- ggplot(data=z, aes(x = x, y = y)) +
+  geom_point(shape = 1) +
+  geom_smooth(method = lm, se = FALSE, color = "yellow") +
+  geom_abline(intercept = 0.33907358 , slope = 0.04701765, color = "blue")
+pp <- pp + geom_abline(intercept = 0.4381565 , slope = 0.04510669, color = "red") + ggtitle("GgPlot Graphic")
+pp <- pp +labs(x="x", se = FALSE, y = "y")
+pp + scale_color_manual("", values = c("GA" = "yellow", "SA" = "blue" , "linear regression" = "red" )) 
+pp
+```
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
